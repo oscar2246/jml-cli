@@ -7,7 +7,7 @@ ACCOUNTDISABLE = 0x0002
 def initialize_connection():
 
 
-    server = Server(f"ldap://{secrets_local.DC_host_ip}")
+    server = Server(f"ldaps://{secrets_local.DC_host_ip}", use_ssl=True)
 
     conn = Connection(
         server,
@@ -76,11 +76,20 @@ def modify_account_status(conn, lan, enable):
      else:
           return False
      
+def create_user_AD(conn, f_name, m_name, l_name, LANID, email):
 
+     m_initial = m_name[0] if m_name else ""
+     middle = f" {m_initial}." if m_name else ""
+     display_name = f"{l_name.capitalize()}, {f_name.capitalize()}{middle}"
 
-          
-               
-          
+     dn = (f"CN={LANID},{secrets_local.SEARCH_BASE}")
+     conn.add(dn, object_class='user', attributes={'sAMAccountName':LANID,
+                                                    'userPrincipalName':email,
+                                                    'givenName': f_name,
+                                                    'sn':l_name,
+                                                    'displayName':display_name,
+                                                    'userAccountControl': 514
+     })
 
+     return conn.result['result'] == 0
 
-     
