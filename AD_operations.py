@@ -34,7 +34,7 @@ def check_email_existence(conn, Email):
 
      conn.search(
           secrets_local.SEARCH_BASE,
-          f'(&(ObjectClass=user)(ObjectCategory=Person)(mail={safe_name_email}))'
+          f'(&(ObjectClass=user)(ObjectCategory=Person)(|(mail={safe_name_email})(userPrincipalName={safe_name_email})))'
      )
      return bool(conn.entries)
 
@@ -86,6 +86,7 @@ def create_user_AD(conn, f_name, m_name, l_name, LANID, email):
                                                     'givenName': f_name,
                                                     'sn':l_name,
                                                     'displayName':display_name,
+                                                    'mail':email,
                                                     'userAccountControl': 514
      })
      return conn.result['result'] == 0
