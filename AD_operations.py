@@ -1,7 +1,6 @@
 from ldap3 import Server, Connection, MODIFY_REPLACE
 from ldap3.utils.conv import escape_filter_chars
 import secrets_local
-
 ACCOUNTDISABLE = 0x0002
 
 def initialize_connection():
@@ -81,7 +80,6 @@ def create_user_AD(conn, f_name, m_name, l_name, LANID, email):
      m_initial = m_name[0] if m_name else ""
      middle = f" {m_initial}." if m_name else ""
      display_name = f"{l_name.capitalize()}, {f_name.capitalize()}{middle}"
-
      dn = (f"CN={LANID},{secrets_local.SEARCH_BASE}")
      conn.add(dn, object_class='user', attributes={'sAMAccountName':LANID,
                                                     'userPrincipalName':email,
@@ -90,6 +88,23 @@ def create_user_AD(conn, f_name, m_name, l_name, LANID, email):
                                                     'displayName':display_name,
                                                     'userAccountControl': 514
      })
-
      return conn.result['result'] == 0
 
+def set_password(conn, lan, pw):
+     dn, uac = get_user_AD(conn, lan)
+     if dn:
+          conn.modify(dn, {'unicodePwd': [(MODIFY_REPLACE, [f'"{pw}"'.encode('utf-16-le')])]})
+          return conn.result['result'] == 0
+     else: return False
+
+def force_change_password(conn, lan, force):
+    
+    dn, uac = get_user_AD(conn, lan)
+    if dn:
+         if force:
+              conn.modify(dn, {'pwdLastSet': [(MODIFY_REPLACE, [0])]})
+              return conn.result['result'] == 0
+         else:
+              conn.modify(dn, {'pwdLastSet': [(MODIFY_REPLACE, [-1])]})
+              return conn.result['result'] == 0 
+    else: return False

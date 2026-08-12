@@ -2,6 +2,7 @@ from uuid import uuid4
 import AD_operations
 import secrets_local
 import storage
+import password_gen
 
 conn = AD_operations.initialize_connection()
 
@@ -73,6 +74,7 @@ class user_creation:
 def create_user():
     users = storage.load_users()
     information = gather_information()
+    
 
     if information == None:
         print("Information comes back as None")
@@ -83,7 +85,7 @@ def create_user():
     l_name = information[2]
 
     new_user_obj = user_creation(f_name, m_name, l_name, conn)
-    
+    temp_password = password_gen.generate()
     #grouping all new user information
     new_user = {
         "Last Name": l_name,
@@ -94,18 +96,32 @@ def create_user():
         "user_id": new_user_obj.user_id,
         "Account Status": new_user_obj.account_status
     }
+    if not AD_operations.create_user_AD(conn, f_name, m_name, l_name, new_user_obj.LANID, new_user_obj.email):
+        print("AD account creation failed")
+        return
+
+    if not AD_operations.set_password(conn, new_user_obj.LANID, temp_password):
+        print("password change failed")
+        return 
     
+    if not AD_operations.force_change_password(conn, new_user_obj.LANID, True):
+        print("force password change failed")
+        return
+
+
+
     users.append(new_user)
     storage.save_users(users)
     storage.log_event("CREATED", new_user_obj.LANID)
 
-    m_initial = m_name[0] if m_name else ""
+    m_initial = m_name[0].capitalize() if m_name else ""
     
     print(f"\nSuccessfully created account for {l_name}, {f_name} {m_initial}")
     print(f"Email: {new_user_obj.email}")
     print(f"LANID: {new_user_obj.LANID}")
     print(f"User ID: {new_user_obj.user_id}")
     print(f"Account Status: {new_user_obj.account_status}")
+    print(f"Temporary password: {temp_password}")
 
 def list_users():
     print(" --- Users --- ")
