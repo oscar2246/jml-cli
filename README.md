@@ -4,6 +4,8 @@ A Python command line tool that provisions and manages user accounts in a live A
 
 The tool covers the identity lifecycle a helpdesk or IAM team actually runs: a joiner gets an account, a mover gets re-enabled, a leaver gets disabled, and all of it lands in an audit trail.
 
+**Status:** Working against a live AD domain: create (joiner), enable/disable (mover/leaver), directory search, and audit logging. Next up: scheduled activation and making AD the single source of truth. See Known limitations below.
+
 ## What it does
 
 - Creates a real AD user object with a collision-safe LANID and email, both checked against the live directory before anything is written
